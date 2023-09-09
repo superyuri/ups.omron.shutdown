@@ -1,0 +1,214 @@
+<?xml version="1.0" standalone="yes"?>
+<!DOCTYPE PLUGIN [
+<!ENTITY name "ups.omron.shutdown">
+<!ENTITY author "Edward">
+<!ENTITY version "2023.09.09">
+<!ENTITY md5 "b27c2bb300747b258d3c82e6c6417555">
+<!ENTITY launch "Settings/OmronUps">
+<!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
+<!ENTITY github "superyuri/ups.omron.shutdown">
+<!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/dev/plugins/&name;.plg">
+]>
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.3.3" icon="fa-battery-three-quarters" support="">
+
+<CHANGES>
+###2023.09.09
+- Initial Release
+</CHANGES>
+
+<!-- The 'pre-install' script. -->
+
+
+
+<!--
+The 'source' file.
+-->
+<FILE Name="/boot/config/plugins/&name;/&name;-&version;-x86_64-1.txz" Run="upgradepkg --install-new">
+<URL>https://raw.githubusercontent.com/&github;/dev/archive/&name;-&version;-x86_64-1.txz</URL>
+<MD5>&md5;</MD5>
+</FILE>
+<!-- The 'pre-install' script. -->
+<FILE Run="/usr/bin/php">
+<INLINE>
+
+</INLINE>
+</FILE>
+
+<!--
+The 'post-install' script
+-->
+<FILE Run="/bin/bash">
+<INLINE>
+rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2&gt;/dev/null | grep -v '&version;')
+
+if [ -f /etc/.SimpleShutdown ]
+then
+	echo "   "
+	echo "   Simple Shutdown has been installed on this computer." 
+	echo "   "
+	exit 1
+fi
+
+echo "\
+Software License Agreement
+
+This is a binding agreement between OMRON Corporation ("OMRON") and you (the "User")
+on the terms and conditions of the license of the Software.
+
+1.In this Agreement, "Software" means the computer program and related 
+	documentation contained in this package. The "Software" shall include 
+	any derivative works thereto. Copyright of the Software remains the 
+	sole property of OMRON or the third party who has licensed the Software 
+	to OMRON and shall not be assigned to the User under this Agreement.
+
+2.OMRON grants the User a non-exclusive, non-transferable and limited 
+	license to use the Software only for the purpose of managing Uninterruptive 
+	Power Supply sold by OMRON on one computer owned by the User.
+
+3.The User shall not sub-license, assign nor lease the Software to any third 
+	party without prior written consent of OMRON.
+	
+4.The User may copy the Software for back-up purpose only. The User may not 
+	de-compile, reverse engineer nor otherwise attempt to discern the source 
+	code of the Software. 
+
+5.The User may modify the Software and the modified Software shall be subject 
+	to the terms and conditions of this Agreement, provided however that, OMRON 
+	shall not be assume any liability for any modified Software. 
+	
+6.The User shall treat any information contained in the Software as confidential 
+	and shall not disclose it to any third party. This obligation shall survive 
+	the termination of this Agreement.
+
+7.OMRON warrants to the User who has registered by the User Registration Card 
+	that, for a period of ninety (90) days after the User's purchase, the 
+	Software will perform substantially in accordance with the attached user 
+	manual.If the registered User discovers defect of the Software (substantial 
+	non-conformity with the manual), and return it to OMRON within the said 
+	ninety (90) days period, OMRON will replace the Software without charge. 
+	The User acknowledges that all errors or bugs of the Software may not be 
+	removed by such replacement.
+
+8.THE ABOVE REPLACEMENT SHALL CONSTITUTE THE USER'S SOLE AND EXCLUSIVE 
+	REMEDIES AGAINST OMRON AND THERE ARE NO OTHER WARRANTIES, EXPRESSED OR 
+	IMPLIED, INCLUDING BUT NOT LIMITED TO, WARRANTY OF MERCHANTABILITY OR 
+	FITNESS FOR PARTICULAR PURPOSE. IN NO EVENT, OMRON WILL BE LIABLE FOR ANY 
+	LOST PROFITS OR OTHER INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL 
+	DAMAGES ARISING OUT OF THIS AGREEMENT OR USE OF THE SOFTWARE.
+
+9.In any event, OMRON's entire liability to the User for any cause shall not 
+	exceed the amount actually paid by the User to purchase the Software.
+
+10.If the User breaches this Agreement, OMRON may terminate this Agreement 
+	upon notice to the User. In that event, the User shall return the Software 
+	and all copies thereof.
+
+11.Neither this Agreement nor any party or portion hereof shall be assigned, 
+	sub-licensed or otherwise transferred by the User. Should any provision of 
+	this Agreement be held to be void, invalid, unenforceable or illegal by a 
+	court, the validity and enforceability of the other provisions of this 
+	Agreement shall not be affected thereby. Failure of a party to enforce any 
+	provision of this Agreement shall not constitute or be construed as a 
+	waiver of such provision or of the right to enforce such provision.
+
+12.If the User will de-compile, reserve engineer, or otherwise attempt to 
+	discern the source code of the Software, OMRON shall have no liability for 
+	any claim of 	patent, utility model right, trade secret or copyright 
+	infringement whenever the User was claimed by the third party who consented 
+	OMRON to use the Software or by the other third party.
+
+13.This Agreement shall be governed by and construed under the laws of Japan." > /tmp/omronlicense.txt
+
+cat /tmp/omronlicense.txt
+declare -ix bContinue=1
+while test $bContinue -eq 1;
+do
+	echo -e "Do you agree this license? [ y/n ] \\c";
+	bContinue=0;
+	rm -f /tmp/omronlicense.txt;
+done
+
+chmod +x /usr/local/emhttp/plugins/&name;/bin/S99SimpleShutdown
+chmod +x /usr/local/emhttp/plugins/&name;/bin/SimpleShutdownDaemon
+echo /usr/local/emhttp/plugins/&name;/bin>/etc/.SimpleShutdown
+
+chmod -R 777 /usr/local/emhttp/plugins/&name;/bin
+
+echo "   "
+echo "   Simple Shutdown program has been installed completely."
+echo "   Please run below command and setup the parameters of "
+echo "   Simple Shutdown to meet your system."
+echo "   "
+echo "   Command:  /usr/local/emhttp/plugins/&name;/bin/config.sh"
+
+echo "\
+[ShutdownParam]
+AutoMode = 1
+PortType = USB
+PortNum = 1
+ACFailDelayTime = 60
+ExternalCommand = /usr/local/emhttp/webGui/scripts/notify -i alert -e 'BW55T UPS' -s 'UPS Power Alert' -d 'Backup Power Is On'
+ExCmdNeedTime = 0
+ShutdownNeedTime = 180
+SendMessage = 0
+UpsCommunicationMode = 0
+Shutdown Mode = 0
+KVM Support = 1
+Guest OS Mode = 0
+
+[End]" > /usr/local/emhttp/plugins/&name;/bin/Shutdown.cfg
+
+echo "Start Autorun"
+echo -e "1\n0" | /usr/local/emhttp/plugins/&name;/bin/AgentManager
+echo ""
+echo "Started"
+
+echo ""
+echo "----------------------------------------------------"
+echo " &name; has been installed."
+echo " Copyright 2016-2023, Edward"
+echo " Version: &version;"
+echo "----------------------------------------------------"
+echo ""
+</INLINE>
+</FILE>
+
+<!--
+The 'remove' script.
+-->
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+#!/bin/bash
+
+if [ -f /etc/.SimpleShutdown ]
+then
+declare -ix bContinue=1
+while test $bContinue -eq 1;
+do
+	echo " "
+	echo -e "   Are you sure to uninstall Simple Shutdown from the computer?[ y/n ] \\c" 
+    
+	bContinue=0;
+	echo " "
+	echo "   Stopping the Simple Shutdown Service firstly......" 
+	/usr/local/emhttp/plugins/&name;/bin/AgentManager stop 2>/dev/null
+	sleep 2;
+	killall -9 SimpleShudownDaemon 2>/dev/null
+	killall -9 SimpleShutdownService 2>/dev/null
+	killall -9 AgentManager 2>/dev/null
+	rm -fr /usr/local/emhttp/plugins/&name;/bin/
+	rm -f /etc/.SimpleShutdown
+
+	echo " "
+	echo -e "   Simple Shutdown has been uninstalled from the computer." 
+	echo " "
+	exit 0;
+done
+else
+	echo -e "   Simple Shutdown has been uninstalled from the computer."
+fi
+
+removepkg &name;-&version;-x86_64-1
+</INLINE>
+</FILE> 
+</PLUGIN>
