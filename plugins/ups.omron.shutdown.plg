@@ -167,7 +167,7 @@ Shutdown Mode = 0
 KVM Support = 1
 Guest OS Mode = 0
 
-[End]" > /usr/lib/ssd/master/config.sh
+[End]" > /usr/lib/ssd/master/Shutdown.cfg
 
 echo "Start Autorun"
 echo -e "1\n0" | /usr/lib/ssd/master/AgentManager
